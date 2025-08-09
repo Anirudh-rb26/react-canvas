@@ -43,7 +43,7 @@ export default function ReactCanvas() {
   const [autoPreview, setAutoPreview] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Initialize the preview component on first render
+  // Initialize preview
   useEffect(() => {
     generatePreview(placeholder_code);
   }, []);
@@ -51,44 +51,35 @@ export default function ReactCanvas() {
   const generatePreview = async (codeToRender) => {
     setIsGenerating(true);
 
-    // Small delay to show loading state
     await new Promise(resolve => setTimeout(resolve, 200));
 
     try {
-      // Transform JSX to JavaScript
+      // JSX -> JS
       const result = Babel.transform(
         `function Preview(){return (${codeToRender});} Preview;`,
         { presets: ["react"] }
       );
 
       const transformed = result?.code;
-      console.log("Transformed code:", transformed); // Debug log
+      // console.log("Transformed code:", transformed);
 
       if (transformed) {
-        // Execute the transformed code and get the component function
         const componentFunction = eval(`(function() { 
           const React = arguments[0]; 
           ${transformed.replace('Preview;', 'return Preview;')} 
         })`)(React);
 
-        console.log("Component function:", componentFunction); // Debug log
-
-        // Verify it's actually a function
-        if (typeof componentFunction === 'function') {
-          setPreviewComponent(() => componentFunction);
-          setError(null);
-          setIsGenerating(false);
-          return true;
-        } else {
-          throw new Error("Generated component is not a function");
-        }
+        setPreviewComponent(() => componentFunction);
+        setError(null);
+        setIsGenerating(false);
       }
     } catch (err) {
-      console.error("Preview generation error:", err); // Debug log
       const errorMessage = err instanceof Error ? err.message : String(err);
+
       setError(errorMessage);
       setPreviewComponent(null);
       setIsGenerating(false);
+
       return false;
     }
 
@@ -96,7 +87,7 @@ export default function ReactCanvas() {
     return false;
   };
 
-  // Auto-preview when autoPreview is enabled
+  // when AutoPreview is Enabled ✅
   useEffect(() => {
     if (autoPreview) {
       generatePreview(code);
@@ -112,9 +103,7 @@ export default function ReactCanvas() {
   };
 
   const handleEditComponent = () => {
-    // Reset to last working code or provide editing utilities
-    setCode(workingCode);
-    setAutoPreview(true);
+    // Navigate to Edit Page
   };
 
   const toggleAutoPreview = () => {
@@ -127,12 +116,16 @@ export default function ReactCanvas() {
 
   return (
     <div className="w-screen h-screen flex flex-col items-center">
+
+      {/* Header */}
       <div className="flex flex-col items-center mt-5">
         <h1 className="text-custom-highlight text-3xl font-bold">React Canvas</h1>
         <p className="mt-3 text-md text-white">Edit your Components Visually</p>
       </div>
 
       <div className="w-full h-full flex flex-row justify-center items-center p-5 gap-x-5">
+
+        {/* Code Section */}
         <div className="w-1/3 h-full flex flex-col">
           <p className="text-[#93918a] font-medium">Paste your JSX code</p>
           <Textarea
@@ -143,6 +136,7 @@ export default function ReactCanvas() {
           />
         </div>
 
+        {/* Preview Section */}
         <div className="w-2/3 h-full flex flex-col">
           <p className="text-[#93918a] font-medium">Live Preview</p>
           <div className="w-full h-full border-1 rounded-md overflow-auto">
@@ -168,6 +162,7 @@ export default function ReactCanvas() {
         </div>
       </div>
 
+      {/* Control Section */}
       <div className="flex flex-row gap-5 p-5">
         <Button
           onClick={toggleAutoPreview}
