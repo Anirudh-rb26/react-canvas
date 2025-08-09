@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import * as Babel from "@babel/standalone";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import ErrorDisplay from "@/components/custom/ErrorDisplay";
 
 const placeholder_code = `<div className="max-w-sm rounded overflow-hidden shadow-lg m-4 bg-white">
   <div className="px-6 py-4">
