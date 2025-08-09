@@ -1,103 +1,198 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import React, { useState, useEffect } from "react";
+import * as Babel from "@babel/standalone";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+
+const placeholder_code = `<div className="max-w-sm rounded overflow-hidden shadow-lg m-4 bg-white">
+  <div className="px-6 py-4">
+    <div className="font-bold text-xl mb-2 text-gray-800">
+      The Coldest Sunset
+    </div>
+    <p className="text-gray-700 text-base">
+      Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatibus
+      quia, nulla! Maiores et perferendis eaque, exercitationem praesentium
+      nihil.
+    </p>
+  </div>
+  <div className="px-6 pt-4 pb-2">
+    <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+      #photography
+    </span>
+    <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+      #travel
+    </span>
+    <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+      #winter
+    </span>
+  </div>
+  <div className="px-6 py-4">
+    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300 w-full">
+      Read More
+    </button>
+  </div>
+</div>`;
+
+export default function ReactCanvas() {
+  const [code, setCode] = useState(placeholder_code);
+  const [workingCode, setWorkingCode] = useState(placeholder_code);
+  const [error, setError] = useState(null);
+  const [PreviewComponent, setPreviewComponent] = useState(null);
+  const [autoPreview, setAutoPreview] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Initialize the preview component on first render
+  useEffect(() => {
+    generatePreview(placeholder_code);
+  }, []);
+
+  const generatePreview = async (codeToRender) => {
+    setIsGenerating(true);
+
+    // Small delay to show loading state
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    try {
+      // Transform JSX to JavaScript
+      const result = Babel.transform(
+        `function Preview(){return (${codeToRender});} Preview;`,
+        { presets: ["react"] }
+      );
+
+      const transformed = result?.code;
+      console.log("Transformed code:", transformed); // Debug log
+
+      if (transformed) {
+        // Execute the transformed code and get the component function
+        const componentFunction = eval(`(function() { 
+          const React = arguments[0]; 
+          ${transformed.replace('Preview;', 'return Preview;')} 
+        })`)(React);
+
+        console.log("Component function:", componentFunction); // Debug log
+
+        // Verify it's actually a function
+        if (typeof componentFunction === 'function') {
+          setPreviewComponent(() => componentFunction);
+          setError(null);
+          setIsGenerating(false);
+          return true;
+        } else {
+          throw new Error("Generated component is not a function");
+        }
+      }
+    } catch (err) {
+      console.error("Preview generation error:", err); // Debug log
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      setPreviewComponent(null);
+      setIsGenerating(false);
+      return false;
+    }
+
+    setIsGenerating(false);
+    return false;
+  };
+
+  // Auto-preview when autoPreview is enabled
+  useEffect(() => {
+    if (autoPreview) {
+      generatePreview(code);
+      setWorkingCode(code);
+    }
+  }, [code, autoPreview]);
+
+  const handleGeneratePreview = async () => {
+    const success = await generatePreview(code);
+    if (success) {
+      setWorkingCode(code);
+    }
+  };
+
+  const handleEditComponent = () => {
+    // Reset to last working code or provide editing utilities
+    setCode(workingCode);
+    setAutoPreview(true);
+  };
+
+  const toggleAutoPreview = () => {
+    setAutoPreview(!autoPreview);
+    if (!autoPreview) {
+      generatePreview(code);
+      setWorkingCode(code);
+    }
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="w-screen h-screen flex flex-col items-center">
+      <div className="flex flex-col items-center mt-5">
+        <h1 className="text-custom-highlight text-3xl font-bold">React Canvas</h1>
+        <p className="mt-3 text-md text-white">Edit your Components Visually</p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <div className="w-full h-full flex flex-row justify-center items-center p-5 gap-x-5">
+        <div className="w-1/3 h-full flex flex-col">
+          <p className="text-[#93918a] font-medium">Paste your JSX code</p>
+          <Textarea
+            className="w-full h-full text-white focus-visible:ring-[#93918a] focus-visible:ring-3 focus-visible:border-[#93918a] resize-none font-mono text-sm rounded-lg scrollbar-thumb-rounded-md scrollbar-track-rounded-full scrollbar scrollbar-w-2 scrollbar-thumb-[#93918a] scrollbar-track-slate"
+            placeholder={placeholder_code}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        <div className="w-2/3 h-full flex flex-col">
+          <p className="text-[#93918a] font-medium">Live Preview</p>
+          <div className="w-full h-full border-1 rounded-md overflow-auto">
+            {isGenerating ? (
+              <div className="w-full h-full flex items-center justify-center text-[#93918a]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#93918a]"></div>
+                  <span>Generating preview...</span>
+                </div>
+              </div>
+            ) : error ? (
+              <ErrorDisplay error={error} />
+            ) : PreviewComponent ? (
+              <div className="w-full h-full items-center justify-center flex">
+                <PreviewComponent />
+              </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[#93918a]">
+                No component to render
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-row gap-5 p-5">
+        <Button
+          onClick={toggleAutoPreview}
+          className={`text-xs px-2 py-1 rounded ${autoPreview
+            ? 'bg-green-600 text-white'
+            : 'bg-gray-600 text-gray-300'
+            }`}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Auto Generate: {autoPreview ? 'ON' : 'OFF'}
+        </Button>
+        {!autoPreview && (
+          <Button
+            onClick={handleGeneratePreview}
+            disabled={isGenerating}
+            className="bg-custom-highlight hover:bg-custom-highlight/90 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-md px-6 py-2 text-white font-medium transition-colors"
+          >
+            {isGenerating ? "Generating..." : "Generate Preview"}
+          </Button>
+        )}
+        <Button
+          onClick={handleEditComponent}
+          className="bg-custom-highlight hover:bg-custom-highlight/90 rounded-md px-6 py-2 text-white font-medium transition-colors"
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Edit Component
+        </Button>
+      </div>
     </div>
   );
 }
